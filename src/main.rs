@@ -90,44 +90,6 @@ fn analyze_imports(source: &Vec<u8>) -> Vec<Box<OsStr>> {
 
     debug_func(&func, 0);
 
-    fn analyze_func(f: &Function) {
-        let mut require_registers: Vec<i32> = vec![];
-        for i in &f.instructions {
-            match i.op_code {
-                OpCode::GetGlobal => {
-                    let constant = &f.constants[i.bx.unwrap() as usize];
-                    match constant {
-                        Constant::String(s) => {
-                            if s.to_string_lossy() == "require" {
-                                require_registers.push(i.a);
-                            }
-                        },
-                        _ => {}
-                    }
-                },
-                OpCode::Call => {
-                    println!("call.. {}", i.a);
-                    if require_registers.contains(&i.a) {
-                        println!("Require called...");
-                    }
-                },
-                OpCode::Move => {
-                    if require_registers.contains(&i.b.unwrap()) {
-                        require_registers.retain(|v| *v != i.b.unwrap());
-                        require_registers.push(i.a);
-                    }
-                }
-                _ => {}
-            }
-        }
-
-        for proto in &f.function_protos {
-            analyze_func(proto);
-        }
-    }
-
-    analyze_func(&func);
-
     todo!()
 }
 

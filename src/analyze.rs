@@ -1,5 +1,19 @@
 use crate::instr::{Instruction, Function, OpCode, Constant};
 
+/// Go through an instruction and see whether or not it loads a global, moves
+/// it, or writes over it, and then update the list of registers on the stack
+/// which still hold a reference to that global. Of course, this analysis 
+/// doesn't consider conditionals, and if someone wrote something like this, 
+/// the function would output incorrect results:
+/// ```lua
+/// local a = require -- assume require is the global to look for
+/// if math.random() < .5 then
+///     a = tostring
+/// end
+/// a("hello.lua")
+/// ```
+/// This analysis also doesn't account for the return value of functions, or 
+/// their parameters.
 fn global_loads(registers_holding_global: &mut Vec<i32>, next_instruction: &Instruction, proto: &Function, global: &str) {
     match next_instruction.op_code {
         OpCode::GetGlobal => {
@@ -15,9 +29,12 @@ fn global_loads(registers_holding_global: &mut Vec<i32>, next_instruction: &Inst
         },
         OpCode::Move => {
             if registers_holding_global.contains(&next_instruction.b.unwrap()) {
-                registers_holding_global.retain(|v| *v != next_instruction.b.unwrap());
+                registers_holding_global.retain(|v| *v != next_instruction.b.unwrap()); // Delete the register holding the global, it's moved
                 registers_holding_global.push(next_instruction.a);
             }
+        }
+        OpCode::Loadk => {
+
         }
         _ => {}
     }
