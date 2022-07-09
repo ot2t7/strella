@@ -2,8 +2,8 @@ mod instr;
 mod parse;
 mod analyze;
 
+use analyze::get_imports;
 use instr::Function;
-use instr::OpCode;
 use instr::Constant;
 use parse::deserialize;
 use parse::ParserError;
@@ -89,6 +89,7 @@ fn analyze_imports(source: &Vec<u8>) -> Vec<Box<OsStr>> {
     }
 
     debug_func(&func, 0);
+    get_imports(&func);
 
     todo!()
 }
