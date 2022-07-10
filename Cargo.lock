@@ -80,6 +80,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "departure"
+version = "0.1.0"
+source = "git+https://github.com/ot2t7/departure#34595765f833989b5bc164caace07ddc92c2b5b1"
+dependencies = [
+ "lazy_static",
+ "mlua",
+ "strum",
+ "strum_macros",
+]
+
+[[package]]
 name = "hashbrown"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -248,10 +259,8 @@ name = "strella"
 version = "0.1.0"
 dependencies = [
  "clap",
- "lazy_static",
+ "departure",
  "mlua",
- "strum",
- "strum_macros",
 ]
 
 [[package]]

@@ -1,6 +1,6 @@
-use std::{ffi::{OsString, OsStr}, os::unix::prelude::{OsStringExt, OsStrExt}, collections::HashMap};
+use std::{ffi::OsString, os::unix::prelude::{OsStringExt, OsStrExt}, collections::HashMap};
 
-use crate::instr::{Constant, Function, Instruction, OpCode};
+use departure::{Constant, Function, Instruction, OpCode};
 
 /// Go through an instruction and see whether or not it loads a global, moves
 /// it, or writes over it, and then update the list of registers on the stack

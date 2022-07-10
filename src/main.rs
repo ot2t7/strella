@@ -1,12 +1,10 @@
-mod instr;
-mod parse;
 mod analyze;
 
 use analyze::get_imports;
-use instr::Function;
-use instr::Constant;
-use parse::deserialize;
-use parse::ParserError;
+use departure::Function;
+use departure::Constant;
+use departure::deserialize;
+use departure::ParserError;
 
 use std::ffi::OsStr;
 use std::fmt::Display;
@@ -41,44 +39,11 @@ where E: Display
     exit(1);
 }
 
-fn debug_func(func: &Function, level: u32) {
-    let indent = " ".repeat(level as usize);
-    print!("{}constants: ", indent);
-    for c in &func.constants {
-        match c {
-            Constant::String(s) => {
-                print!("{}{}, ", indent, s.to_string_lossy())
-            }
-            _ => {
-                print!("{}{:?}, ", indent, c);
-            }
-        }
-    }
-    println!();
-    for i in &func.instructions {
-        match i.instruction_kind {
-            instr::InstructionKind::ABC => {
-                println!("{}{:>10?}{:>4}{:>4}{:>4}", indent, i.op_code, i.a, i.b.unwrap(), i.c.unwrap());
-            },
-            instr::InstructionKind::ABx => {
-                println!("{}{:10?}{:4}{:4}", indent, i.op_code, i.a, i.bx.unwrap());
-            },
-            instr::InstructionKind::AsBx => {
-                println!("{}{:10?}{:4}{:4}", indent, i.op_code, i.a, i.sbx.unwrap());
-            },
-        }
-    }
-    for f in &func.function_protos {
-        debug_func(f, level + 1);
-    }
-}
-
 /// Find all strings the script attempts to import
 fn analyze_imports(source: &Vec<u8>) -> Vec<Box<OsStr>> {
     let src = String::from_utf8_lossy(&source);
-    let state = Lua::new(); // The state will hold all lua variables we can't represent
     let func: Function;
-    match deserialize(&src.to_string(), &state) {
+    match deserialize(&src.to_string()) {
         Ok(v) => func = v,
         Err(e) => {
             match e {
@@ -88,7 +53,6 @@ fn analyze_imports(source: &Vec<u8>) -> Vec<Box<OsStr>> {
         }
     }
 
-    debug_func(&func, 0);
     get_imports(&func);
 
     todo!()

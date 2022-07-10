@@ -7,7 +7,5 @@ edition = "2021"
 
 [dependencies]
 mlua = { version = "0.8", features = ["lua51", "vendored"] }
-strum = "0.24"
-strum_macros = "0.24"
-lazy_static = "1.4.0"
+departure = { git = "https://github.com/ot2t7/departure" }
 clap = { version = "3.2.8", features = ["derive"] }
