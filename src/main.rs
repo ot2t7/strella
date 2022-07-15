@@ -1,8 +1,9 @@
-use std::ffi::OsStr;
+use std::{ffi::OsStr, path::Path};
 use std::fmt::Display;
 use std::fs::read;
 use std::path::PathBuf;
 use std::process::exit;
+use std::env::current_dir;
 
 use clap::Parser;
 use lualexer::{FastLexer, TokenType};
@@ -42,7 +43,7 @@ where E: Display
 }
 
 /// Find all strings the script attempts to import
-fn analyze_imports(source: &Vec<u8>, current_location: &PathBuf) -> Vec<String> {
+fn analyze_imports(source: &Vec<u8>, current_location: &PathBuf) -> Vec<PathBuf> {
     let src = String::from_utf8_lossy(source);
     let lexer = FastLexer::new();
     let mut tokens;
@@ -54,15 +55,10 @@ fn analyze_imports(source: &Vec<u8>, current_location: &PathBuf) -> Vec<String> 
     }
 
     // Remove all comments
-    let mut to_delete = vec![];
-    for (i, t) in tokens.iter().enumerate() {
-        if t.get_type() == &TokenType::Comment {
-            to_delete.push(i);
-        }
-    }
-    for i in to_delete {
-        tokens.remove(i);
-    }
+    tokens = tokens
+        .into_iter()
+        .filter(|t| t.get_type() != &TokenType::Comment)
+        .collect();
 
     // Analyze tokens
     let mut strings_to_require: Vec<String> = vec![];
@@ -113,33 +109,59 @@ fn analyze_imports(source: &Vec<u8>, current_location: &PathBuf) -> Vec<String> 
                             curr_token += 1;
                         }
                         if broke {
-                            println!("{}: Possibly skipped an import because require is not properly called with one string constant.", current_location.to_string_lossy()); 
+                            let path = current_location.file_name().unwrap_or(OsStr::new("")).to_string_lossy();
+                            println!("{}: Possibly skipped an import because require is not properly called with one string constant.", path); 
                         } else if require_string_registered == true {
                             strings_to_require.push(require_string.to_string());
                         }
                     } else {
-                        println!("{}: Possibly skipped an import because require is not properly called with one string constant.", current_location.to_string_lossy());
+                        let path = current_location.file_name().unwrap_or(OsStr::new("")).to_string_lossy();
+                        println!("{}: Possibly skipped an import because require is not properly called with one string constant.", path);
                     }
                 }
                 _ => {
-                    println!("{}: Possibly skipped an import because require is not properly called with one string constant.", current_location.to_string_lossy());
+                    let path = current_location.file_name().unwrap_or(OsStr::new("")).to_string_lossy();
+                    println!("{}: Possibly skipped an import because require is not properly called with one string constant.", path);
                 }
             }
         }
     }
 
-    // Parse imports for invalid ones
-    for (i, import) in strings_to_require.iter().enumerate() {
-        let path = PathBuf::from(import);
-    }
+    // Make all import paths into absolute paths
+    let parent = current_location.parent().unwrap_or(Path::new(""));
+    let mut paths_to_require: Vec<PathBuf> = strings_to_require
+        .into_iter()
+        .map(|i| parent.join(&i))
+        .collect();
 
-    return strings_to_require;
+    // Parse imports for invalid ones
+    paths_to_require.retain(|path| {
+        match read(&path) {
+            Ok(_) => {
+                if path.extension() != Some(OsStr::new("lua")) {
+                    let curr_path = current_location.file_name().unwrap_or(OsStr::new("")).to_string_lossy();
+                    println!("{}: Skipping import `{}` (file isn't .lua file)", curr_path, path.to_string_lossy());
+                    return false;
+                }
+            }
+            Err(e) => {
+                let curr_path = current_location.file_name().unwrap_or(OsStr::new("")).to_string_lossy();
+                println!("{}: Skipping import `{}` ({})", curr_path, path.to_string_lossy(), e);
+                return false
+            }
+        }
+        return true;
+    });
+
+    return paths_to_require;
 }
 
 fn main() {
     let args = BuildRequest::parse();
-    let input_src = maybe_fail(read(&args.input_file));
-    if args.input_file.extension() != Some(OsStr::new("lua")) { maybe_fail(Err("Input file isn't a .lua file"))};
+    let path = maybe_fail(current_dir()).join(args.input_file);
+    let input_src = maybe_fail(read(&path));
+    if path.extension() != Some(OsStr::new("lua")) { maybe_fail(Err("Input file isn't a .lua file"))};
 
-    analyze_imports(&input_src, &args.input_file);
+    let imports = analyze_imports(&input_src, &path);
+    println!("{:?}", imports);
 }
