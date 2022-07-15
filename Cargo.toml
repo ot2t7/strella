@@ -6,6 +6,5 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-mlua = { version = "0.8", features = ["lua51", "vendored"] }
-departure = { git = "https://github.com/ot2t7/departure" }
+lualexer = "0.1.2"
 clap = { version = "3.2.8", features = ["derive"] }

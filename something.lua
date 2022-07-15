@@ -1,8 +1,4 @@
-local a = require;
-print("a")
-print("b")
-a("hi");
-tonumber("3");
-tonumber("3");
-tonumber("3");
-tonumber("3");
+local a = require("../something.lua")
+local b = require "./myFav.lua"
+local c = require((("lol.lua")))
+local d = require(thisWontWork)
