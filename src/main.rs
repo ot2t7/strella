@@ -43,6 +43,9 @@ where E: Display
 }
 
 /// Find all strings the script attempts to import
+// TODO: If two scripts import each other, or theres any kind
+// of import loop, the builder will crash.
+// TODO: Absolute paths for importing does not work.
 fn analyze_imports(source: &Vec<u8>, current_location: &PathBuf) -> Vec<PathBuf> {
     let src = String::from_utf8_lossy(source);
     let lexer = FastLexer::new();
@@ -152,6 +155,15 @@ fn analyze_imports(source: &Vec<u8>, current_location: &PathBuf) -> Vec<PathBuf>
         }
         return true;
     });
+
+    // Recursively analyze imports
+    for i in &paths_to_require.clone() {
+        // Safety: These files are already parsed and must be
+        // valid.
+        let contents = read(&i).unwrap();
+        let mut imports = analyze_imports(&contents, i);
+        paths_to_require.append(&mut imports);
+    }
 
     return paths_to_require;
 }

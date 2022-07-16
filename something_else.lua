@@ -1,0 +1,1 @@
+local a = require("../strella/something_different.lua");
